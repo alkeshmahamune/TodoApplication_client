@@ -12,7 +12,7 @@ const priorityBadge = {
   low: "bg-green-100 text-green-800",
 };
 
-export default function TodoApp() {
+export default function TodoApp({ user, onAuthChange }) {
   const [todos, setTodos] = useState([]);
   const [input, setInput] = useState("");
   const [priority, setPriority] = useState("medium");
@@ -25,22 +25,25 @@ export default function TodoApp() {
   const [authModal, setAuthModal] = useState(null); // "login" | "register" | null
   const [authForm, setAuthForm] = useState({ email: "", password: "", name: "" });
   const [authError, setAuthError] = useState("");
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("user")) || null; } catch { return null; }
-  });
   const todosRef = useRef(null);
 
   const totalDone = stats.completed;
   const progress = stats.total ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   const request = async (url, options = {}) => {
-    const token = localStorage.getItem("token");
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const response = await fetch(url, { headers, ...options });
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    const response = await fetch(url, {
+      credentials: "include",
+      headers,
+      ...options,
+    });
     const text = await response.text();
     let body;
-    try { body = text ? JSON.parse(text) : {}; } catch { body = { message: text }; }
+    try {
+      body = text ? JSON.parse(text) : {};
+    } catch {
+      body = { message: text };
+    }
     if (!response.ok) throw new Error(body?.message || text || "Server error");
     return body;
   };
@@ -121,10 +124,8 @@ export default function TodoApp() {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      if (data.token) localStorage.setItem("token", data.token);
       if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+        onAuthChange?.(data.user);
       }
       setAuthModal(null);
       setAuthForm({ email: "", password: "", name: "" });
@@ -134,14 +135,17 @@ export default function TodoApp() {
     }
   };
 
-  const naviagate=useNavigate()
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await request(`${API_BASE}/api/auth/logout`, { method: "POST" });
+    } catch (err) {
+      console.error("Logout failed:", err.message);
+    }
+    onAuthChange?.(null);
     setTodos([]);
-    naviagate('/login')
     setStats({ total: 0, completed: 0 });
+    navigate("/login");
   };
 
   const openModal = (type) => {

@@ -21,14 +21,13 @@ function LoginRegister({ onAuth }) {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.message || "Auth failed");
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user || {}));
-      onAuth?.(true);
+      onAuth?.(data.user || null);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
