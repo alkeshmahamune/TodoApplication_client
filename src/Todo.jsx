@@ -301,8 +301,10 @@ const style = `
   }
 `;
 
+import { API_BASE } from "./apiConfig";
+
 const PRIORITIES = ["high", "medium", "low"];
-const API_URL = "https://todo-application-server-pink.vercel.app/api/todos";
+const API_URL = `${API_BASE}/api/todos`;
 
 export default function TodoApp() {
   const [todos, setTodos] = useState([]);
@@ -322,11 +324,11 @@ export default function TodoApp() {
   const filtered = todos;
 
   const request = async (url, options = {}) => {
-    const response = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
-      ...options,
-    });
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
+    const response = await fetch(url, { headers, ...options });
     const text = await response.text();
     let body;
     try {
