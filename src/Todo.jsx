@@ -302,7 +302,7 @@ const style = `
 `;
 
 const PRIORITIES = ["high", "medium", "low"];
-const API_URL = "/api/todos";
+const API_URL = "https://todo-application-server-pink.vercel.app/api/todos";
 
 export default function TodoApp() {
   const [todos, setTodos] = useState([]);
