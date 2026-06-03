@@ -38,7 +38,7 @@ function LoginRegister({ onAuth }) {
   };
 
   return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-4">
+  <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-600 via-gray-600 to-black px-4">
     <div className="w-full max-w-md">
       <div className="backdrop-blur-lg bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8">
         <div className="text-center mb-8">

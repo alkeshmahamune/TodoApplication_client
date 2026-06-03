@@ -1,310 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-
-const style = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: rgba(255,255,255,0.07);
-    --accent: #7c6af7;
-    --accent2: #f76ab4;
-    --accent3: #6af7c8;
-    --text: #f0eeff;
-    --muted: #6b6882;
-    --danger: #f76a6a;
-    --success: #6af7c8;
-  }
-
-  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
-
-  body::before {
-    content: '';
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    opacity: 0.4;
-  }
-
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 48px; height: 64px;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em;
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); animation: pulse 2s infinite; }
-
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
-
-  .nav-links { display: flex; gap: 32px; align-items: center; }
-  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s; cursor: pointer; }
-  .nav-links a:hover { color: var(--text); }
-
-  .nav-badge {
-    background: var(--accent); color: white; border-radius: 20px;
-    padding: 4px 14px; font-size: 0.75rem; font-family: 'Syne', sans-serif; font-weight: 700;
-    letter-spacing: 0.04em;
-  }
-
-  .hero {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    text-align: center; padding: 80px 24px 48px;
-    position: relative; overflow: hidden;
-  }
-
-  .hero-bg {
-    position: absolute; inset: 0; pointer-events: none;
-    background:
-      radial-gradient(ellipse 60% 50% at 50% 30%, rgba(124,106,247,0.15) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 30% at 20% 70%, rgba(247,106,180,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 80% 60%, rgba(106,247,200,0.07) 0%, transparent 60%);
-  }
-
-  .hero-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 60px 60px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-  }
-
-  .hero-content { position: relative; z-index: 1; max-width: 680px; }
-
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid rgba(124,106,247,0.3); border-radius: 100px;
-    padding: 6px 16px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 32px; background: rgba(124,106,247,0.08);
-    animation: fadeUp 0.6s ease both;
-  }
-
-  .hero-tag span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-
-  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-
-  .hero h1 {
-    font-family: 'Syne', sans-serif; font-weight: 800;
-    font-size: clamp(2.8rem, 7vw, 5.5rem); line-height: 0.95; letter-spacing: -0.04em;
-    margin-bottom: 20px;
-    animation: fadeUp 0.6s 0.1s ease both;
-  }
-
-  .hero h1 em { font-style: normal; color: var(--accent); }
-  .hero h1 .line2 { display: block; color: var(--muted); }
-
-  .hero-sub {
-    color: var(--muted); font-size: 0.9rem; line-height: 1.7; max-width: 420px; margin: 0 auto 40px;
-    animation: fadeUp 0.6s 0.2s ease both;
-  }
-
-  .hero-cta {
-    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-    animation: fadeUp 0.6s 0.3s ease both;
-  }
-
-  .btn-primary {
-    background: var(--accent); color: white; border: none; border-radius: 8px;
-    padding: 12px 28px; font-family: 'Syne', sans-serif; font-weight: 700;
-    font-size: 0.85rem; letter-spacing: 0.04em; cursor: pointer;
-    box-shadow: 0 0 32px rgba(124,106,247,0.35);
-    transition: all 0.2s; text-transform: uppercase;
-  }
-
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 40px rgba(124,106,247,0.5); }
-
-  .btn-secondary {
-    background: transparent; color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 28px; font-family: 'Syne', sans-serif;
-    font-weight: 600; font-size: 0.85rem; letter-spacing: 0.04em; cursor: pointer;
-    transition: all 0.2s; text-transform: uppercase;
-  }
-
-  .btn-secondary:hover { border-color: rgba(255,255,255,0.2); background: var(--surface); }
-
-  .hero-stats {
-    display: flex; gap: 40px; justify-content: center; margin-top: 56px;
-    padding-top: 40px; border-top: 1px solid var(--border);
-    animation: fadeUp 0.6s 0.4s ease both;
-  }
-
-  .stat-item { text-align: center; }
-  .stat-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.8rem; color: var(--text); display: block; }
-  .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
-
-  .todos-section {
-    max-width: 760px; margin: 0 auto; padding: 48px 24px 120px;
-    position: relative; z-index: 1;
-  }
-
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
-
-  .section-title {
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.5rem;
-    letter-spacing: -0.02em;
-  }
-
-  .filter-tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 8px; padding: 3px; }
-
-  .filter-tab {
-    padding: 6px 14px; border-radius: 6px; font-size: 0.72rem;
-    text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer;
-    border: none; background: transparent; color: var(--muted);
-    font-family: 'DM Mono', monospace; transition: all 0.15s;
-  }
-
-  .filter-tab.active { background: var(--surface2); color: var(--text); }
-
-  .add-form {
-    display: flex; gap: 10px; margin-bottom: 24px; position: relative;
-  }
-
-  .add-input {
-    flex: 1; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 18px; color: var(--text);
-    font-family: 'DM Mono', monospace; font-size: 0.88rem;
-    outline: none; transition: border-color 0.2s;
-  }
-
-  .add-input:focus { border-color: rgba(124,106,247,0.5); }
-  .add-input::placeholder { color: var(--muted); }
-
-  .priority-select {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 0 14px; color: var(--text); font-family: 'DM Mono', monospace;
-    font-size: 0.78rem; outline: none; cursor: pointer; transition: border-color 0.2s;
-    appearance: none; width: 100px; text-align: center;
-  }
-
-  .priority-select:focus { border-color: rgba(124,106,247,0.5); }
-
-  .add-btn {
-    background: var(--accent); color: white; border: none; border-radius: 10px;
-    width: 48px; height: 48px; font-size: 1.4rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 20px rgba(124,106,247,0.3); transition: all 0.2s; flex-shrink: 0;
-  }
-
-  .add-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(124,106,247,0.5); }
-
-  .todo-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .todo-item {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 20px; display: flex; align-items: center; gap: 14px;
-    transition: all 0.2s; position: relative; overflow: hidden;
-    animation: slideIn 0.25s ease;
-  }
-
-  @keyframes slideIn { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
-
-  .todo-item:hover { border-color: rgba(255,255,255,0.12); background: var(--surface2); }
-
-  .todo-item.done { opacity: 0.5; }
-  .todo-item.done .todo-text { text-decoration: line-through; color: var(--muted); }
-
-  .priority-stripe {
-    position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 12px 0 0 12px;
-  }
-
-  .p-high { background: linear-gradient(180deg, #f76a6a, #f7a06a); }
-  .p-medium { background: linear-gradient(180deg, #f7d06a, #f7a06a); }
-  .p-low { background: linear-gradient(180deg, #6af7c8, #6ab4f7); }
-
-  .check-btn {
-    width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--border);
-    background: transparent; cursor: pointer; display: flex; align-items: center;
-    justify-content: center; transition: all 0.15s; flex-shrink: 0;
-  }
-
-  .check-btn.checked { background: var(--accent3); border-color: var(--accent3); }
-  .check-btn.checked::after { content: '✓'; color: #0a0a0f; font-size: 0.75rem; font-weight: 700; }
-  .check-btn:hover:not(.checked) { border-color: var(--accent); }
-
-  .todo-text { flex: 1; font-size: 0.88rem; line-height: 1.4; }
-
-  .todo-edit-input {
-    flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--accent);
-    color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.88rem;
-    outline: none; padding-bottom: 2px;
-  }
-
-  .todo-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
-  .todo-item:hover .todo-actions { opacity: 1; }
-
-  .icon-btn {
-    width: 30px; height: 30px; border-radius: 6px; border: none;
-    background: transparent; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 0.85rem;
-    transition: all 0.15s; color: var(--muted);
-  }
-
-  .icon-btn:hover { background: var(--surface2); color: var(--text); }
-  .icon-btn.del:hover { background: rgba(247,106,106,0.15); color: var(--danger); }
-  .icon-btn.save:hover { background: rgba(106,247,200,0.15); color: var(--accent3); }
-
-  .priority-badge {
-    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 2px 8px; border-radius: 20px; font-weight: 500; flex-shrink: 0;
-  }
-
-  .badge-high { background: rgba(247,106,106,0.15); color: #f76a6a; }
-  .badge-medium { background: rgba(247,208,106,0.15); color: #f7d06a; }
-  .badge-low { background: rgba(106,247,200,0.15); color: #6af7c8; }
-
-  .empty-state {
-    text-align: center; padding: 60px 20px;
-    color: var(--muted); font-size: 0.85rem; line-height: 1.8;
-  }
-
-  .empty-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
-
-  .progress-bar-wrap {
-    background: var(--surface); border-radius: 4px; height: 4px; margin-bottom: 28px; overflow: hidden;
-  }
-
-  .progress-bar-fill {
-    height: 100%; border-radius: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    transition: width 0.4s ease;
-  }
-
-  .progress-label {
-    display: flex; justify-content: space-between; margin-bottom: 8px;
-    font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em;
-  }
-
-  .clear-done-btn {
-    background: transparent; border: 1px solid var(--border); border-radius: 8px;
-    color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.72rem;
-    padding: 6px 14px; cursor: pointer; letter-spacing: 0.04em;
-    transition: all 0.2s; text-transform: uppercase;
-  }
-
-  .clear-done-btn:hover { border-color: rgba(247,106,106,0.4); color: var(--danger); }
-
-  @media (max-width: 600px) {
-    nav { padding: 0 20px; }
-    .nav-links { gap: 16px; }
-    .priority-badge, .filter-tabs { display: none; }
-  }
-`;
-
 import { API_BASE } from "./apiConfig";
+import { useNavigate } from "react-router-dom";
 
 const PRIORITIES = ["high", "medium", "low"];
 const API_URL = `${API_BASE}/api/todos`;
+
+const priorityStripe = { high: "bg-red-500", medium: "bg-yellow-400", low: "bg-green-500" };
+const priorityBadge = {
+  high: "bg-red-100 text-red-800",
+  medium: "bg-yellow-100 text-yellow-800",
+  low: "bg-green-100 text-green-800",
+};
 
 export default function TodoApp() {
   const [todos, setTodos] = useState([]);
@@ -316,37 +22,32 @@ export default function TodoApp() {
   const [stats, setStats] = useState({ total: 0, completed: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authModal, setAuthModal] = useState(null); // "login" | "register" | null
+  const [authForm, setAuthForm] = useState({ email: "", password: "", name: "" });
+  const [authError, setAuthError] = useState("");
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("user")) || null; } catch { return null; }
+  });
   const todosRef = useRef(null);
 
   const totalDone = stats.completed;
   const progress = stats.total ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const filtered = todos;
-
   const request = async (url, options = {}) => {
     const token = localStorage.getItem("token");
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
-
     const response = await fetch(url, { headers, ...options });
     const text = await response.text();
     let body;
-    try {
-      body = text ? JSON.parse(text) : {};
-    } catch {
-      body = { message: text };
-    }
-
-    if (!response.ok) {
-      throw new Error(body?.message || text || "Server error");
-    }
+    try { body = text ? JSON.parse(text) : {}; } catch { body = { message: text }; }
+    if (!response.ok) throw new Error(body?.message || text || "Server error");
     return body;
   };
 
   const fetchTodos = async (currentFilter = filter) => {
     setLoading(true);
     setError("");
-
     try {
       const data = await request(`${API_URL}?filter=${currentFilter}`);
       setTodos(data.data || []);
@@ -358,74 +59,43 @@ export default function TodoApp() {
     }
   };
 
-  useEffect(() => {
-    fetchTodos(filter);
-  }, [filter]);
+  useEffect(() => { fetchTodos(filter); }, [filter]);
 
   const addTodo = async () => {
     const text = input.trim();
     if (!text) return;
-
     try {
       setLoading(true);
-      await request(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ text, priority }),
-      });
+      await request(API_URL, { method: "POST", body: JSON.stringify({ text, priority }) });
       setInput("");
       setPriority("medium");
       fetchTodos(filter);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
   const updateTodo = async (id, updates) => {
     try {
       setLoading(true);
-      await request(`${API_URL}/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(updates),
-      });
+      await request(`${API_URL}/${id}`, { method: "PUT", body: JSON.stringify(updates) });
       fetchTodos(filter);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
-  const toggleTodo = (todo) => {
-    updateTodo(todo._id || todo.id, { done: !todo.done });
-  };
+  const toggleTodo = (todo) => updateTodo(todo._id || todo.id, { done: !todo.done });
 
   const deleteTodo = async (todo) => {
     try {
       setLoading(true);
-      await request(`${API_URL}/${todo._id || todo.id}`, {
-        method: "DELETE",
-      });
+      await request(`${API_URL}/${todo._id || todo.id}`, { method: "DELETE" });
       fetchTodos(filter);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
-  const startEdit = (todo) => {
-    setEditId(todo._id || todo.id);
-    setEditText(todo.text);
-  };
+  const startEdit = (todo) => { setEditId(todo._id || todo.id); setEditText(todo.text); };
 
   const saveEdit = async (id) => {
     const text = editText.trim();
-    if (!text) {
-      setError("Task text cannot be empty.");
-      return;
-    }
+    if (!text) { setError("Task text cannot be empty."); return; }
     await updateTodo(id, { text });
     setEditId(null);
     setEditText("");
@@ -436,149 +106,450 @@ export default function TodoApp() {
       setLoading(true);
       await request(`${API_URL}/completed`, { method: "DELETE" });
       fetchTodos(filter);
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setAuthError("");
+    const endpoint = authModal === "login" ? "/api/auth/login" : "/api/auth/register";
+    try {
+      const payload = authModal === "login"
+        ? { email: authForm.email, password: authForm.password }
+        : { name: authForm.name, email: authForm.email, password: authForm.password };
+      const data = await request(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (data.token) localStorage.setItem("token", data.token);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+      }
+      setAuthModal(null);
+      setAuthForm({ email: "", password: "", name: "" });
+      fetchTodos(filter);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setAuthError(err.message);
     }
   };
 
-  const scrollToTodos = () => todosRef.current?.scrollIntoView({ behavior: "smooth" });
+  const naviagate=useNavigate()
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setTodos([]);
+    naviagate('/login')
+    setStats({ total: 0, completed: 0 });
+  };
+
+  const openModal = (type) => {
+    setAuthModal(type);
+    setAuthError("");
+    setAuthForm({ email: "", password: "", name: "" });
+  };
+
+  const filters = ["all", "active", "done"];
+
+  const features = [
+    { icon: "ti-list-check", title: "Prioritized tasks", desc: "Mark tasks high, medium, or low priority to stay focused on what matters." },
+    { icon: "ti-chart-bar", title: "Progress tracking", desc: "See your completion rate at a glance with a live progress bar." },
+    { icon: "ti-filter", title: "Smart filters", desc: "Switch between all, active, and done views in one click." },
+  ];
 
   return (
-    <>
-      <style>{style}</style>
+    <div className="min-h-screen bg-gray-50">
 
-      <nav>
-        <div className="nav-logo">
-          <div className="logo-dot" />
-          TASKR
-        </div>
-        <div className="nav-links">
-          <a onClick={scrollToTodos}>Tasks</a>
-          <a>Projects</a>
-          <a>Focus</a>
-          <div className="nav-badge">{stats.total - stats.completed} pending</div>
+      {/* ── NAVBAR ── */}
+      <nav className="bg-white border-b border-gray-200 px-6 py-0 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto flex items-center justify-between h-14">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-indigo-500 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 4h10M2 7h7M2 10h5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <span className="font-semibold text-gray-900 text-sm tracking-wide">Taskr</span>
+          </div>
+
+          {/* Nav links */}
+          <div className="hidden sm:flex items-center gap-6 text-sm text-gray-500 font-medium">
+            <a
+              href="#features"
+              className="text-gray-500 no-underline"
+              onClick={e => { e.preventDefault(); document.getElementById("features")?.scrollIntoView({ behavior: "smooth" }); }}
+            >
+              Features
+            </a>
+            <a
+              href="#tasks"
+              className="text-gray-500 no-underline"
+              onClick={e => { e.preventDefault(); todosRef.current?.scrollIntoView({ behavior: "smooth" }); }}
+            >
+              My tasks
+            </a>
+          </div>
+
+          {/* Auth buttons */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <span className="text-xs text-gray-500 hidden sm:inline">
+                  Hi, {user.name || user.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 bg-white"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => openModal("login")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white"
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={() => openModal("register")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-500 text-white border border-indigo-500"
+                >
+                  Sign up free
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </nav>
 
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-grid" />
-        <div className="hero-content">
-          <div className="hero-tag"><span />Minimal Productivity Stack</div>
-          <h1>
-            Get things<br /><em>done</em>
-            <span className="line2">beautifully.</span>
+      {/* ── HERO ── */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-16 sm:py-20 flex flex-col items-center text-center">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
+            Simple · Fast · Focused
+          </span>
+
+          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 leading-tight mb-4 max-w-xl">
+            A cleaner way to manage your tasks
           </h1>
-          <p className="hero-sub">A focused task manager for people who ship. Capture, organize, and complete your work without the noise.</p>
-          <div className="hero-cta">
-            <button className="btn-primary" onClick={scrollToTodos}>Start tracking →</button>
-            <button className="btn-secondary">View focus mode</button>
+
+          <p className="text-gray-500 text-base leading-relaxed max-w-md mb-8">
+            Taskr helps you capture, prioritize, and complete work without the clutter. No boards, no noise — just your list.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => todosRef.current?.scrollIntoView({ behavior: "smooth" })}
+              className="px-5 py-2.5 rounded-lg bg-indigo-500 text-white text-sm font-medium"
+            >
+              Go to my tasks
+            </button>
+            {!user && (
+              <button
+                onClick={() => openModal("register")}
+                className="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium bg-white"
+              >
+                Create account
+              </button>
+            )}
           </div>
-          <div className="hero-stats">
-            <div className="stat-item">
-              <span className="stat-num">{stats.total}</span>
-              <span className="stat-label">Total tasks</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-num">{totalDone}</span>
-              <span className="stat-label">Completed</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-num">{progress}%</span>
-              <span className="stat-label">Progress</span>
-            </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-100 w-full max-w-sm justify-center">
+            {[
+              { val: stats.total, label: "Total tasks" },
+              { val: totalDone, label: "Completed" },
+              { val: `${progress}%`, label: "Progress" },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <div className="text-xl font-semibold text-gray-900">{s.val}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="todos-section" ref={todosRef}>
-        <div className="section-header">
-          <div className="section-title">Tasks</div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            {totalDone > 0 && <button className="clear-done-btn" onClick={clearDone}>Clear done</button>}
-            <div className="filter-tabs">
-              {["all", "active", "done"].map(f => (
-                <button key={f} className={`filter-tab ${filter === f ? "active" : ""}`} onClick={() => setFilter(f)}>
-                  {f}
-                </button>
-              ))}
-            </div>
+      {/* ── FEATURES ── */}
+      <section id="features" className="bg-gray-50 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-12">
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-6 text-center">Why Taskr</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {features.map(f => (
+              <div key={f.title} className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center mb-3">
+                  <i className={`ti ${f.icon} text-indigo-500`} style={{ fontSize: 16 }} aria-hidden="true" />
+                </div>
+                <p className="text-sm font-medium text-gray-900 mb-1">{f.title}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TASKS ── */}
+      <main className="max-w-2xl mx-auto px-4 py-10" ref={todosRef} id="tasks">
+        <div className="mb-6">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-1">Task manager</p>
+          <h2 className="text-xl font-semibold text-gray-900">My tasks</h2>
+        </div>
+
+        {/* Progress */}
+        <div className="mb-6">
+          <div className="flex justify-between text-xs text-gray-500 mb-2">
+            <span>Progress</span>
+            <span>{totalDone} / {stats.total} done</span>
+          </div>
+          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
-        <div className="progress-label">
-          <span>Progress</span>
-          <span>{totalDone}/{stats.total} done</span>
-        </div>
-        <div className="progress-bar-wrap">
-          <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
+        {/* Add form */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+          <div className="flex gap-2 mb-3">
+            <input
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-400 placeholder-gray-400"
+              placeholder="Add a new task..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && addTodo()}
+              disabled={loading}
+            />
+            <select
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white outline-none focus:border-indigo-400"
+              value={priority}
+              onChange={e => setPriority(e.target.value)}
+              disabled={loading}
+            >
+              {PRIORITIES.map(p => (
+                <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+              ))}
+            </select>
+            <button
+              className="bg-indigo-500 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+              onClick={addTodo}
+              disabled={loading}
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex gap-1">
+            {filters.map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize border ${
+                  filter === f
+                    ? "bg-indigo-50 border-indigo-300 text-indigo-700"
+                    : "border-gray-200 text-gray-500 bg-transparent"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="add-form">
-          <input
-            className="add-input"
-            placeholder="Add a new task..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && addTodo()}
-            disabled={loading}
-          />
-          <select className="priority-select" value={priority} onChange={e => setPriority(e.target.value)} disabled={loading}>
-            {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <button className="add-btn" onClick={addTodo} disabled={loading}>+</button>
-        </div>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+            {error}
+          </div>
+        )}
 
-        {error && <div className="empty-state" style={{ color: "#f76a6a" }}>{error}</div>}
-        {loading && !todos.length && <div className="empty-state">Loading tasks…</div>}
+        {loading && !todos.length && (
+          <div className="text-center text-sm text-gray-400 py-10">Loading tasks…</div>
+        )}
 
-        <div className="todo-list">
-          {filtered.length === 0 && !loading && (
-            <div className="empty-state">
-              <span className="empty-icon">✦</span>
+        {/* Todo list */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
+          {todos.length === 0 && !loading ? (
+            <div className="text-center text-sm text-gray-400 py-12">
               {filter === "done" ? "No completed tasks yet." : "No tasks here. Add one above!"}
             </div>
-          )}
-          {filtered.map(todo => {
-            const id = todo._id || todo.id;
-            return (
-              <div key={id} className={`todo-item ${todo.done ? "done" : ""}`}>
-                <div className={`priority-stripe p-${todo.priority}`} />
-                <button
-                  className={`check-btn ${todo.done ? "checked" : ""}`}
-                  onClick={() => toggleTodo(todo)}
-                  disabled={loading}
-                />
-                {editId === id ? (
+          ) : (
+            todos.map((todo, idx) => {
+              const id = todo._id || todo.id;
+              const isEditing = editId === id;
+              const isLast = idx === todos.length - 1;
+              return (
+                <div
+                  key={id}
+                  className={`flex items-center gap-3 px-4 py-3 ${!isLast ? "border-b border-gray-100" : ""} ${todo.done ? "opacity-50" : ""}`}
+                >
+                  <div className={`w-1 h-10 rounded-full flex-shrink-0 ${priorityStripe[todo.priority] || "bg-gray-300"}`} />
                   <input
-                    className="todo-edit-input"
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") saveEdit(id);
-                      if (e.key === "Escape") setEditId(null);
-                    }}
-                    autoFocus
+                    type="checkbox"
+                    checked={!!todo.done}
+                    onChange={() => toggleTodo(todo)}
+                    disabled={loading}
+                    className="w-4 h-4 accent-indigo-500 flex-shrink-0 cursor-pointer"
                   />
-                ) : (
-                  <span className="todo-text">{todo.text}</span>
-                )}
-                <span className={`priority-badge badge-${todo.priority}`}>{todo.priority}</span>
-                <div className="todo-actions">
-                  {editId === id ? (
-                    <button className="icon-btn save" onClick={() => saveEdit(id)} title="Save">✓</button>
+                  {isEditing ? (
+                    <input
+                      className="flex-1 border-b border-indigo-400 text-sm text-gray-900 bg-transparent outline-none py-0.5"
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") saveEdit(id);
+                        if (e.key === "Escape") setEditId(null);
+                      }}
+                      autoFocus
+                    />
                   ) : (
-                    <button className="icon-btn" onClick={() => startEdit(todo)} title="Edit">✎</button>
+                    <span className={`flex-1 text-sm ${todo.done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                      {todo.text}
+                    </span>
                   )}
-                  <button className="icon-btn del" onClick={() => deleteTodo(todo)} title="Delete" disabled={loading}>✕</button>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${priorityBadge[todo.priority] || ""}`}>
+                    {todo.priority}
+                  </span>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    {isEditing ? (
+                      <button
+                        onClick={() => saveEdit(id)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-green-200 bg-green-50 text-green-700"
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => startEdit(todo)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 bg-gray-50 text-gray-600"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteTodo(todo)}
+                      disabled={loading}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-red-200 bg-red-50 text-red-600 disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
-      </section>
-    </>
+
+        {/* <div className="flex justify-between items-center px-1">
+          <span className="text-xs text-gray-400">{totalDone} of {stats.total} completed</span>
+          {totalDone > 0 && (
+            <button
+              onClick={clearDone}
+              className="text-xs font-medium text-red-500 bg-transparent border-none cursor-pointer"
+            >
+              Clear completed
+            </button>
+          )}
+        </div> */}
+      </main>
+
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-gray-100 bg-white mt-4">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-indigo-500 flex items-center justify-center">
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                <path d="M2 4h10M2 7h7M2 10h5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-500">Taskr</span>
+          </div>
+          <p className="text-xs text-gray-400">Stay focused. Ship more.</p>
+        </div>
+      </footer>
+
+      {/* ── AUTH MODAL ── */}
+      {authModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-4"
+          onClick={e => { if (e.target === e.currentTarget) setAuthModal(null); }}
+        >
+          <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold text-gray-900">
+                {authModal === "login" ? "Welcome back" : "Create your account"}
+              </h2>
+              <button
+                onClick={() => setAuthModal(null)}
+                className="text-gray-400 bg-transparent border-none cursor-pointer text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleAuth}>
+              {authModal === "register" && (
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Your name"
+                    value={authForm.name}
+                    onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-400 placeholder-gray-400"
+                  />
+                </div>
+              )}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  value={authForm.email}
+                  onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-400 placeholder-gray-400"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={authForm.password}
+                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-400 placeholder-gray-400"
+                />
+              </div>
+
+              {authError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
+                  {authError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-500 text-white rounded-lg py-2.5 text-sm font-medium"
+              >
+                {authModal === "login" ? "Log in" : "Create account"}
+              </button>
+            </form>
+
+            <p className="text-xs text-center text-gray-400 mt-4">
+              {authModal === "login" ? "Don't have an account? " : "Already have an account? "}
+              <button
+                onClick={() => openModal(authModal === "login" ? "register" : "login")}
+                className="text-indigo-500 font-medium bg-transparent border-none cursor-pointer"
+              >
+                {authModal === "login" ? "Sign up" : "Log in"}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
